@@ -1,0 +1,47 @@
+import java.sql.*; 
+import java.util.Scanner; 
+ 
+public class VulnerableLogin { 
+    public static void main(String[] args) { 
+        // ERRO 7 — Scanner não fechado (deveria usar try-with-resources ou fechar ao final).
+        Scanner scanner = new Scanner(System.in); 
+        String url = "jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1"; 
+        String dbUser = "sa"; 
+        String dbPass = "";  
+ 
+        try (Connection conn = DriverManager.getConnection(url, dbUser, dbPass); 
+             // ERRO 5 — Uso de Statement em vez de PreparedStatement (facilita SQL Injection).
+             Statement s = conn.createStatement()) { 
+ 
+            // ERRO 2 — Armazenamento de senha em texto plano: campo password VARCHAR.
+            s.execute("CREATE TABLE IF NOT EXISTS users(username VARCHAR(50), 
+password VARCHAR(50));"); 
+            // ERRO 6 — Inserção de senha em texto plano (sem hash/salt) — exemplo: 'password123'.
+            s.execute("MERGE INTO users KEY(username) VALUES('alice','password123');"); 
+ 
+            System.out.print("Usuário: "); 
+            String username = scanner.nextLine(); 
+ 
+            System.out.print("Senha: "); 
+            String pwd = scanner.nextLine(); 
+ 
+            // ERRO 1 — SQL Injection: concatena entrada do usuário diretamente na query.
+            String query = "SELECT * FROM users WHERE username = '" + username + "' AND 
+password = '" + pwd + "'"; 
+            // ERRO 3 — Info leak: imprime a query construída (vaza estrutura e possíveis dados).
+            System.out.println("Executando query: " + query); // info leak (mostra a query construída) 
+ 
+            try (ResultSet rs = s.executeQuery(query)) { 
+                if (rs.next()) { 
+                    // ERRO 4 — Exposição de senha: imprime a senha do usuário na saída.
+                    System.out.println("Bem-vindo " + username + "! Sua senha é: " + pwd); 
+                } else { 
+                    System.out.println("Usuário ou senha incorretos."); 
+                } 
+            } 
+        } catch (SQLException e) { 
+            // ERRO 8 — Tratamento de erro inseguro: printStackTrace() vaza detalhes internos.
+            e.printStackTrace(); 
+        } 
+    } 
+}

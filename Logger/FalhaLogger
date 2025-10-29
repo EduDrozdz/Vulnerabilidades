@@ -1,0 +1,18 @@
+import java.util.logging.*;
+
+public class BadLogger {
+    private static final Logger LOG = Logger.getLogger(BadLogger.class.getName());
+
+    public static void main(String[] args) {
+        // ERRO 2 — Fallback inseguro: define token hardcoded quando variável de ambiente ausente.
+        String secretToken = System.getenv("API_TOKEN");
+        if (secretToken == null) secretToken = "dummy-token-123";
+
+        // ERRO 1 — Log segredo completo: imprime token sensível nos logs (vazamento).
+        LOG.info("Conectando com token: " + secretToken);
+
+        // ERRO 3 — Ausência de validação/erro explícito: não falha ou avisa adequadamente quando token não existe.
+        // deveria abortar ou exigir configuração correta em vez de continuar com dummy.
+        System.out.println("Inicializando serviço...");
+    }
+}

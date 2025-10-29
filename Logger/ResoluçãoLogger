@@ -1,0 +1,22 @@
+import java.util.logging.*;
+
+public class BadLoggerFix {
+  private static final Logger LOG = Logger.getLogger(BadLoggerFix.class.getName());
+
+  public static void main(String[] args) {
+    String secretToken = System.getenv("API_TOKEN");
+    if (secretToken == null || secretToken.isBlank()) {
+      LOG.severe("API token ausente. Defina a variável de ambiente API_TOKEN.");
+      System.exit(1);
+    }
+
+    LOG.info(() -> "Conectando com token=" + mask(secretToken));
+    System.out.println("Inicializando serviço...");
+    // ... inicialização real do cliente usando secretToken (sem logar o valor)
+  }
+
+  private static String mask(String t) {
+    int keep = Math.min(4, t.length());
+    return "****" + t.substring(t.length() - keep);
+  }
+}
